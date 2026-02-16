@@ -21,7 +21,7 @@ OPENROUTER_API_KEY=ваш_ключ
 DATABASE_URL=postgresql://postgres:postgres@postgres:5432/video_stats
 4. Выполните:
 ```bash
-docker-compose up --build```
+docker-compose up --build
 5. Бот запустится, загрузит данные и начнёт отвечать на сообщения.
 Использование:
 Напишите боту вопрос на русском языке, например:
