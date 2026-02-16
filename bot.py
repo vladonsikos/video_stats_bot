@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# Улучшенный промпт с явным запретом JOIN и акцентом на подзапросы
+# Промпт с подробными правилами и примерами
 SYSTEM_PROMPT = """
 Ты — AI, который переводит вопросы на русском языке в SQL-запросы для PostgreSQL.
 
@@ -90,7 +90,6 @@ async def ask_llm(question: str) -> str:
         resp.raise_for_status()
         data = resp.json()
         sql = data["choices"][0]["message"]["content"].strip()
-        # Удаляем маркеры кода (```sql, ```) и пустые строки в начале/конце
         lines = sql.split('\n')
         clean_lines = []
         for line in lines:
@@ -99,7 +98,6 @@ async def ask_llm(question: str) -> str:
                 continue
             clean_lines.append(line.rstrip())
         sql = '\n'.join(clean_lines).strip()
-        # Если после очистки нет SELECT, пробуем найти первую строку с SELECT
         if not sql.lower().startswith('select'):
             for i, line in enumerate(clean_lines):
                 if line.strip().lower().startswith('select'):
@@ -112,24 +110,16 @@ async def execute_sql(sql: str) -> str:
     try:
         sql_lower = sql.lower()
         if "delete" in sql_lower or "drop" in sql_lower or "insert" in sql_lower or "update" in sql_lower:
-            print("Forbidden operation detected")
             return "0"
-        # Выполняем запрос
         row = await conn.fetchrow(sql)
-        print(f"Row fetched: {row}")  # Отладка
         if row and row[0] is not None:
-            result = str(row[0])
-            print(f"Result: {result}")
-            return result
+            return str(row[0])
         else:
-            print("No row or None value, returning 0")
             return "0"
     except asyncpg.PostgresError as e:
-        print(f"PostgreSQL error: {e}")
         logging.error(f"PostgreSQL error: {e}\nSQL: {sql}")
         return "0"
     except Exception as e:
-        print(f"Unexpected error: {e}")
         logging.error(f"Unexpected error: {e}\nSQL: {sql}")
         return "0"
     finally:
@@ -149,7 +139,6 @@ async def handle_question(message: types.Message):
 
     try:
         sql = await ask_llm(question)
-        print(f"SQL: {sql}")  # Отладка
         logging.info(f"SQL: {sql}")
         answer = await execute_sql(sql)
         await message.answer(answer)

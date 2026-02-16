@@ -1,0 +1,9 @@
+.env
+
+__pycache__/
+*.pyc
+
+videos.json
+
+pg_data/
+videos.json
